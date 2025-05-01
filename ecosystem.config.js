@@ -1,6 +1,6 @@
 module.exports = {
     apps: [{
-      name: "himani-portfolio",
+      name: "chat-app-tarun",
       script: "bun",
       args: "start",
       cwd: "./",
