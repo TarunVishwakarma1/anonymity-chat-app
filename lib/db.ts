@@ -1,31 +1,53 @@
-import { neon } from "@neondatabase/serverless"
-import { createCipheriv, createDecipheriv, randomBytes } from "crypto"
+import { neon } from "@neondatabase/serverless";
+import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from "crypto";
 
 // Create a reusable SQL client
-export const sql = neon(process.env.DATABASE_URL!)
+export const sql = neon(process.env.DATABASE_URL!);
 
 // Encryption helpers
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || randomBytes(32).toString("hex")
-const IV_LENGTH = 16
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY; // Expecting a 64-character hex string
+const IV_LENGTH = 16;
+
+// Generate a new encryption key if one doesn't exist (for development/initial setup)
+if (!ENCRYPTION_KEY) {
+  console.warn(
+    "ENCRYPTION_KEY environment variable not set. Generating a new one. " +
+      "THIS IS NOT RECOMMENDED FOR PRODUCTION!",
+  );
+  process.env.ENCRYPTION_KEY = randomBytes(32).toString("hex");
+}
+
+function getEncryptionKeyBuffer(): Buffer {
+  const keyHex = process.env.ENCRYPTION_KEY!;
+  if (keyHex.length !== 64) {
+    console.error(
+      "Error: ENCRYPTION_KEY must be a 64-character hexadecimal string (32 bytes).",
+      keyHex,
+      keyHex.length,
+    );
+    throw new Error("Invalid encryption key length.");
+  }
+  return Buffer.from(keyHex, "hex");
+}
 
 export function encrypt(text: string): { encryptedData: string; iv: string } {
-  const iv = randomBytes(IV_LENGTH)
-  const key = Buffer.from(ENCRYPTION_KEY, "hex")
-  const cipher = createCipheriv("aes-256-cbc", key, iv)
-  let encrypted = cipher.update(text, "utf8", "hex")
-  encrypted += cipher.final("hex")
+  const iv = randomBytes(IV_LENGTH);
+  const key = getEncryptionKeyBuffer();
+  const cipher = createCipheriv("aes-256-cbc", key, iv);
+  let encrypted = cipher.update(text, "utf8", "hex");
+  encrypted += cipher.final("hex");
   return {
     encryptedData: encrypted,
     iv: iv.toString("hex"),
-  }
+  };
 }
 
 export function decrypt(encryptedData: string, iv: string): string {
-  const key = Buffer.from(ENCRYPTION_KEY, "hex")
-  const decipher = createDecipheriv("aes-256-cbc", key, Buffer.from(iv, "hex"))
-  let decrypted = decipher.update(encryptedData, "hex", "utf8")
-  decrypted += decipher.final("utf8")
-  return decrypted
+  const key = getEncryptionKeyBuffer();
+  const decipher = createDecipheriv("aes-256-cbc", key, Buffer.from(iv, "hex"));
+  let decrypted = decipher.update(encryptedData, "hex", "utf8");
+  decrypted += decipher.final("utf8");
+  return decrypted;
 }
 
 // User functions
@@ -60,13 +82,42 @@ export async function getRoomParticipants(roomId: number) {
 
 // Message functions
 export async function getMessages(roomId: number) {
-  return sql`
+  const messages = await sql`
     SELECT m.*, u.username, u.avatar_url
     FROM messages m
     JOIN users u ON m.user_id = u.id
     WHERE m.room_id = ${roomId}
     ORDER BY m.created_at ASC
   `
+
+  // Decrypt message content if it's encrypted
+  return messages.map((message) => {
+    if (message.is_encrypted) {
+      try {
+        // Parse the encrypted content
+        let encryptedContent
+        try {
+          encryptedContent = JSON.parse(message.content)
+        } catch (e) {
+          // If it's not valid JSON, return as is
+          return message
+        }
+
+        // Check if the content has the expected format
+        if (encryptedContent && encryptedContent.encrypted && encryptedContent.iv) {
+          // Decrypt the content
+          const decryptedContent = decrypt(encryptedContent.encrypted, encryptedContent.iv)
+          return {
+            ...message,
+            content: decryptedContent,
+          }
+        }
+      } catch (error) {
+        console.error("Error decrypting message:", error)
+      }
+    }
+    return message
+  })
 }
 
 // Drawing functions

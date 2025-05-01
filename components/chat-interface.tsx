@@ -63,6 +63,30 @@ export function ChatInterface({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
+  // Update the ChatInterface component to handle both encrypted and decrypted messages
+  useEffect(() => {
+    // Process messages to ensure content is properly handled
+    const processedMessages = initialMessages.map((msg) => {
+      // If the content is an object with encrypted and iv properties, it needs decryption
+      if (typeof msg.content === "object" && msg.content !== null) {
+        try {
+          // This would be handled by the server, but just in case
+          console.warn("Found encrypted message that wasn't decrypted by the server")
+          return msg
+        } catch (error) {
+          console.error("Error processing message:", error)
+          return {
+            ...msg,
+            content: "⚠️ Encrypted message",
+          }
+        }
+      }
+      return msg
+    })
+
+    setMessages(processedMessages)
+  }, [initialMessages])
+
   const handleSendMessage = () => {
     if (!message.trim()) return
 

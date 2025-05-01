@@ -115,7 +115,16 @@ export default function RoomClient({ room, currentUser, initialMessages, initial
       // In a real app with sockets, we would receive the message from the socket
       // For now, we'll just update our local state
       setMessages((prev) =>
-        prev.map((msg) => (msg.id === tempMessage.id ? { ...data.message, id: data.message.id } : msg)),
+        prev.map((msg) =>
+          msg.id === tempMessage.id
+            ? {
+                ...data.message,
+                id: data.message.id,
+                // Ensure we're using the decrypted content
+                content: data.message.content,
+              }
+            : msg,
+        ),
       )
     } catch (error) {
       console.error("Error sending message:", error)

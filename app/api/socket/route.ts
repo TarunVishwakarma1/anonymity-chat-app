@@ -44,11 +44,12 @@ export async function POST(request: Request) {
 
         // Encrypt message content
         const { encryptedData, iv } = encrypt(content)
+        const encryptedContent = JSON.stringify({ encrypted: encryptedData, iv })
 
         // Store message
         const message = await sql`
           INSERT INTO messages (content, user_id, room_id, created_at, is_encrypted)
-          VALUES (${JSON.stringify({ encrypted: encryptedData, iv })}, ${user.id}, ${roomId}, NOW(), true)
+          VALUES (${encryptedContent}, ${user.id}, ${roomId}, NOW(), true)
           RETURNING id, created_at
         `
 
@@ -56,7 +57,7 @@ export async function POST(request: Request) {
           success: true,
           message: {
             id: message[0].id,
-            content,
+            content, // Return the original content for the sender
             userId: user.id,
             username: user.username,
             roomId,
