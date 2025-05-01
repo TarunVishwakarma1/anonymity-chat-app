@@ -39,7 +39,8 @@ function RoomHeaderSkeleton() {
   )
 }
 
-export default async function RoomPage({ params }: { params: { id: string } }) {
+export default async function RoomPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const user = await getCurrentUser()
 
   // If user is not logged in, redirect to login page

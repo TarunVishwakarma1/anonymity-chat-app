@@ -2,7 +2,8 @@ import { type NextRequest, NextResponse } from "next/server"
 import { getRoomWithParticipants, joinRoom } from "@/lib/rooms"
 import { getCurrentUser } from "@/lib/auth"
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const roomId = Number.parseInt(params.id)
 
@@ -23,7 +24,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser()
 

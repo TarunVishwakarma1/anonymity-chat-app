@@ -15,7 +15,7 @@ export function verifyPassword(password: string, hashedPassword: string): boolea
 
 // Get the current user from cookies
 export async function getCurrentUser() {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const userId = cookieStore.get("userId")?.value
 
   if (!userId) {

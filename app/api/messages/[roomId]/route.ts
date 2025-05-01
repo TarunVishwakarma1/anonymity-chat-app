@@ -1,7 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getRoomMessages } from "@/lib/messages"
 
-export async function GET(req: NextRequest, { params }: { params: { roomId: string } }) {
+export async function GET(req: NextRequest, props: { params: Promise<{ roomId: string }> }) {
+  const params = await props.params;
   try {
     
     const roomId = Number.parseInt(params.roomId)

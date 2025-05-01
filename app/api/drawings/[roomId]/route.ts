@@ -2,7 +2,8 @@ import { type NextRequest, NextResponse } from "next/server"
 import { getRoomDrawing, saveDrawing } from "@/lib/drawings"
 import { getCurrentUser } from "@/lib/auth"
 
-export async function GET(req: NextRequest, { params }: { params: { roomId: string } }) {
+export async function GET(req: NextRequest, props: { params: Promise<{ roomId: string }> }) {
+  const params = await props.params;
   try {
     const roomId = Number.parseInt(params.roomId)
 
@@ -19,7 +20,8 @@ export async function GET(req: NextRequest, { params }: { params: { roomId: stri
   }
 }
 
-export async function POST(req: NextRequest, { params }: { params: { roomId: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ roomId: string }> }) {
+  const params = await props.params;
   try {
     const user = await getCurrentUser()
 
