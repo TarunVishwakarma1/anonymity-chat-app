@@ -8,9 +8,8 @@ import { ThemeProvider } from "@/components/theme-provider"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata = {
-  title: "Sketch Chat - Real-time Chat & Drawing",
+  title: "SketchChat - Real-time Chat & Drawing",
   description: "A colorful real-time chat application with collaborative drawing features",
-    generator: 'v0.dev'
 }
 
 export default function RootLayout({
