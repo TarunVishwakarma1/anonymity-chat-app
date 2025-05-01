@@ -1,5 +1,5 @@
 import { neon } from "@neondatabase/serverless";
-import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from "crypto";
+import { createCipheriv, createDecipheriv, randomBytes } from "crypto";
 
 // Create a reusable SQL client
 export const sql = neon(process.env.DATABASE_URL!);
@@ -14,11 +14,12 @@ if (!ENCRYPTION_KEY) {
     "ENCRYPTION_KEY environment variable not set. Generating a new one. " +
       "THIS IS NOT RECOMMENDED FOR PRODUCTION!",
   );
-  process.env.ENCRYPTION_KEY = randomBytes(32).toString("hex");
 }
 
 function getEncryptionKeyBuffer(): Buffer {
   const keyHex = process.env.ENCRYPTION_KEY!;
+  console.log('Current ENCRYPTION_KEY:', keyHex); // Added log
+  console.log('Length of ENCRYPTION_KEY:', keyHex.length); // Added log
   if (keyHex.length !== 64) {
     console.error(
       "Error: ENCRYPTION_KEY must be a 64-character hexadecimal string (32 bytes).",
